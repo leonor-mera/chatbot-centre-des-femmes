@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Multilingue</title>
+    <style>
+        /* Estilo general */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background: #f9f4f9; /* Fondo suave */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Contenedor principal */
+        .chat-container {
+            width: 450px; /* Aumentar el ancho del frame */
+            max-width: 95%; /* Permitir que sea responsivo */
+            height: 620px; /* Ajustar el alto para evitar cortes */
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Encabezado */
+        .chat-header {
+            background: #e74c3c; /* Color rojo coral */
+            color: #ffffff; /* Letras blancas */
+            padding: 15px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* Área del chat */
+        .chat-body {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #fef7fb; /* Fondo claro acorde a la marca */
+        }
+
+        /* Mensajes */
+        .message {
+            margin: 10px 0;
+        }
+
+        .user-message {
+            text-align: right;
+        }
+
+        .user-message .text {
+            display: inline-block;
+            background: #7b1b50; /* Color morado */
+            color: white;
+            padding: 10px 15px;
+            border-radius: 15px;
+            max-width: 70%;
+        }
+
+        .bot-response .text {
+            display: inline-block;
+            background: #fcd9e5; /* Rosa claro */
+            color: #7b1b50;
+            padding: 10px 15px;
+            border-radius: 15px;
+            max-width: 70%;
+        }
+
+        /* Área de entrada */
+        .chat-footer {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-top: 1px solid #ddd;
+            background: #ffffff;
+        }
+
+        .chat-footer select {
+            margin-right: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .chat-footer input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            margin-right: 10px;
+        }
+
+        .chat-footer button {
+            padding: 10px 20px;
+            background: #e74c3c; /* Color rojo coral */
+            color: white; /* Letras blancas */
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .chat-footer button:hover {
+            background: #c0392b; /* Color rojo oscuro al pasar el mouse */
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Encabezado del chat -->
+        <div class="chat-header" id="chat-header">
+            Bienvenue - Assistant virtuel - Centre de Femmes de Montréal
+        </div>
+        <!-- Cuerpo del chat -->
+        <div class="chat-body" id="chat-box">
+            <!-- Los mensajes se agregarán aquí dinámicamente -->
+        </div>
+        <!-- Pie del chat (campo de entrada) -->
+        <div class="chat-footer">
+            <select id="language-select" onchange="changeLanguage()">
+                <option value="fr">Français</option>
+                <option value="en">English</option>
+                <option value="es">Español</option>
+            </select>
+            <input type="text" id="user-input" placeholder="Écrivez ici">
+            <button onclick="sendMessage()">Envoyer</button>
+        </div>
+    </div>
+
+    <script>
+        // Traducciones de los elementos de la interfaz
+		const translations = {
+			fr: {
+				header: "Bienvenue - Assistant virtuel - Centre de Femmes de Montréal",
+				placeholder: "Écrivez ici",
+				button: "Envoyer"
+			},
+			en: {
+				header: "Welcome - Virtual Assistant - Montreal Women's Center",
+				placeholder: "Write here",
+				button: "Send"
+			},
+			es: {
+				header: "Bienvenido - Asistente virtual - Centro de Mujeres de Montreal",
+				placeholder: "Escriba aquí",
+				button: "Enviar"
+			}
+		};
+
+        // Cambiar el idioma
+        function changeLanguage() {
+            const selectedLanguage = document.getElementById("language-select").value;
+            document.getElementById("chat-header").textContent = translations[selectedLanguage].header;
+            document.getElementById("user-input").placeholder = translations[selectedLanguage].placeholder;
+            document.querySelector(".chat-footer button").textContent = translations[selectedLanguage].button;
+        }
+
+        // Enviar mensaje al servidor
+        async function sendMessage() {
+            const userInput = document.getElementById("user-input").value.trim();
+            const chatBox = document.getElementById("chat-box");
+            const language = document.getElementById("language-select").value;
+
+            if (userInput === "") return; // No enviar mensajes vacíos
+
+            // Mostrar el mensaje del usuario
+            const userMessageDiv = document.createElement("div");
+            userMessageDiv.className = "message user-message";
+            userMessageDiv.innerHTML = `<div class="text">${userInput}</div>`;
+            chatBox.appendChild(userMessageDiv);
+
+            // Enviar el mensaje al backend con el idioma seleccionado
+            const response = await fetch("/chat", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ message: userInput, language: language }),
+            });
+            const data = await response.json();
+
+            // Mostrar la respuesta del chatbot
+            const botMessageDiv = document.createElement("div");
+            botMessageDiv.className = "message bot-response";
+            botMessageDiv.innerHTML = `<div class="text">${data.response}</div>`;
+            chatBox.appendChild(botMessageDiv);
+
+            // Limpiar el campo de entrada
+            document.getElementById("user-input").value = "";
+
+            // Desplazar el chat al final
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
+</body>
+</html>
